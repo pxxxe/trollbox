@@ -1,0 +1,94 @@
+.trollbox-message-header {
+    color: #00ad34;
+}
+
+
+.trollbox-message-actions {
+    display: none;
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    gap: 4px;
+}
+
+.trollbox-message {
+    position: relative;
+}
+
+.trollbox-message:hover .trollbox-message-actions {
+    display: flex;
+}
+
+.trollbox-action-button {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.trollbox-action-button:hover {
+    opacity: 1;
+    background: var(--background-modifier-hover);
+}
+
+.trollbox-emoji-picker {
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 8px;
+    display: flex;
+    gap: 4px;
+    z-index: 1000;
+}
+
+.trollbox-emoji-option {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.trollbox-emoji-option:hover {
+    background: var(--background-modifier-hover);
+}
+
+.trollbox-reactions {
+    display: flex;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.trollbox-reaction {
+    background: var(--background-modifier-hover);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 12px;
+    padding: 2px 6px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.trollbox-reaction:hover {
+    background: var(--background-modifier-hover-hover);
+}
+
+.trollbox-reply-to {
+    font-size: 0.8em;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.trollbox-container,
+.trollbox-messages {
+  position: relative;
+}
+
+.trollbox-container {
+    max-width: 300px;
+}
