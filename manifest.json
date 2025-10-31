@@ -3,8 +3,8 @@
 	"name": "Trollbox-Nostr",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Chat with other Obsidian users.",
-	"author": "jenny",
+	"description": "Chat with other users over Nostr relays.",
+	"author": "pxxxe",
 	"authorUrl": "https://x.com/jenny_sixsixsix",
 	"fundingUrl": "https://obsidian.md/pricing",
 	"isDesktopOnly": false
