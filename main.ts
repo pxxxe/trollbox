@@ -118,7 +118,6 @@ export default class TrollboxPlugin extends Plugin {
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
-		console.log("Loaded settings:", this.settings);
 		if (!this.settings.privateKey) {
 			this.settings.privateKey = generateSecretKey();
 			await this.saveData(this.settings);
@@ -140,7 +139,6 @@ class TrollboxView extends ItemView {
 		super(leaf);
 		this.settings = settings;
 		this.privateKey = settings.privateKey;
-		// console.log("Private Key:", this.privateKey);
 		this.publicKey = getPublicKey(this.privateKey);
 		this.ipfsManager = new IPFSManager();
 
@@ -157,7 +155,6 @@ class TrollboxView extends ItemView {
 
 	async connect() {
 		try {
-			console.log("Connecting to relays:", this.settings.relays);
 			this.pool = new SimplePool();
 			// subscribe to channel
 			this.subscriptionCloser = this.pool.subscribeMany(
@@ -168,13 +165,11 @@ class TrollboxView extends ItemView {
 				],
 				{
 					onevent: (evt: NostrEvent) => this.onEvent(evt),
-					onclose: (reasons) => console.warn("sub closed:", reasons),
+					onclose: (reasons) => new Notice("sub closed"),
 					maxWait: 30_000
 				}
 			);
-			console.log("Connected to relays:", this.settings.relays);
 		} catch (e) {
-			console.error("Error connecting to relays:", e);
 			new Error("Failed to connect to relays. Please check your settings.");
 		}
 
@@ -202,7 +197,7 @@ class TrollboxView extends ItemView {
 						imageShare = specialData;
 					}
 				} catch (error) {
-					console.error('Error parsing special message data:', error);
+					new Notice('Error parsing special message data')
 				}
 			}
 
@@ -235,7 +230,6 @@ class TrollboxView extends ItemView {
 			const chanTag = evt.tags.find(t => t[0] === 't')?.[1];
 			if (chanTag !== DEFAULT_CHANNEL) return;
 
-			console.log("⮕ got a reaction event", evt);
 			const targetId = evt.tags.find(t => t[0] === 'e')?.[1];
 			const emoji = evt.content;
 			const msg = this.messages.find(m => m.id === targetId);
@@ -326,7 +320,6 @@ class TrollboxView extends ItemView {
 		const dup = this.messages.find(m => m.content === msg.content && Math.abs(m.timestamp - msg.timestamp) < 5);
 		if (dup) return;
 		this.messages.push(msg);
-		console.log("New message:", msg);
 		this.renderMessages();
 	}
 
@@ -471,9 +464,8 @@ class TrollboxView extends ItemView {
 		const pubs = this.pool.publish(this.settings.relays, event);
 		try {
 			await Promise.any(pubs);
-			console.log("reaction published to at least one relay");
 		} catch {
-			console.warn("no relay accepted the reaction");
+			new Notice('No relay accepted the reaction');
 		}
 		this.renderMessages();
 	}
@@ -534,7 +526,6 @@ class TrollboxView extends ItemView {
 			new Notice('Vault files shared successfully!');
 
 		} catch (error) {
-			console.error('Error sharing vault files:', error);
 			new Notice('Failed to share vault files');
 		}
 	}
@@ -564,7 +555,6 @@ class TrollboxView extends ItemView {
 			new Notice('Image shared successfully!');
 
 		} catch (error) {
-			console.error('Error sharing image:', error);
 			new Notice('Failed to share image');
 		}
 	}
@@ -638,12 +628,10 @@ class TrollboxView extends ItemView {
 		if (imageShare.multiaddrs && imageShare.multiaddrs.length > 0) {
 			for (const ma of imageShare.multiaddrs) {
 				try {
-					console.log(`Dialing peer at ${ma}`);
 					await this.ipfsManager.helia.libp2p.dial(ma);
-					console.log(`Dialed peer at ${ma}`);
 					break;
 				} catch (err) {
-					console.warn(`Failed to dial ${ma}:`, err);
+					new Notice(`Failed to dial ${ma}:`);
 				}
 			}
 		}
@@ -694,7 +682,6 @@ class TrollboxView extends ItemView {
 			modal.open();
 
 		} catch (error) {
-			console.error('Error browsing vault share:', error);
 			new Notice('Failed to load vault files');
 		}
 	}
@@ -706,7 +693,6 @@ class TrollboxView extends ItemView {
 			this.downloadFile(content, imageShare.filename);
 
 		} catch (error) {
-			console.error('Error downloading image:', error);
 			new Notice('Failed to download image');
 		}
 	}
@@ -774,26 +760,15 @@ class IPFSManager {
 		if (this.initialized) return;
 
 		try {
-			console.log('WebSockets' in window)
 			let datastore = new MemoryDatastore();
 			let blockstore = new MemoryBlockstore();
-			// let wrtcStar = webRTCStar({
-			// 	wrtc: (window as any).wrtc || (window as any).WebRTC || (window as any).RTCPeerConnection
-			// })
-			// console.log('Using WebRTC Star:', wrtcStar);
-			// const star = webRTCStar({ wrtc: electronWebRTC() })
-			console.log(window)
 			let libp2pOptions: Libp2pOptions = {
 				connectionManager: {
 					maxConnections: Infinity,
 				},
 				transports: [
 					webSockets(),
-					// webTransport(),
-					// webRTC(),
-					// Circuit relay as fallback for NAT traversal
 					circuitRelayTransport(),
-					// wrtcStar.transport as any,
 
 				],
 				connectionEncrypters: [
@@ -823,7 +798,6 @@ class IPFSManager {
 							'/dnsaddr/bootstrap.libp2p.io/p2p/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd',
 						]
 					}),
-					// wrtcStar.discovery as any,
 				])
 			}
 			const libp2p = await createLibp2p({
@@ -836,19 +810,8 @@ class IPFSManager {
 				libp2p,
 				blockBrokers: [
 					bitswap(), 
-					// trustlessGateway()
 				],
 				routers: [
-					// delegatedHTTPRouting('https://delegated-ipfs.dev/'),
-					// httpGatewayRouting({
-					// 	gateways: [
-					// 		'https://ipfs.io',
-					// 		'https://w3s.link',
-					// 		'https://cloudflare-ipfs.com',
-					// 		'https://gateway.pinata.cloud',
-					// 		'https://dweb.link'
-					// 	]
-					// }),
 					libp2pRouting(libp2p)
 				],
 			})
@@ -856,20 +819,15 @@ class IPFSManager {
 
 			this.fs = unixfs(this.helia);
 			this.initialized = true;
-			console.log(await this.helia.libp2p.getMultiaddrs())
-			const dht = (libp2p.services as any).dht
-			console.log('dht', dht);
 			await new Promise(resolve => setTimeout(resolve, 5000));
 			const peers = this.helia.libp2p.getPeers();
-			console.log('Connected peers:', peers);
 
 			if (peers.length > 0) {
-				console.log('Successfully connected to IPFS network');
+				new Notice('Successfully connected to IPFS network');
 			} else {
-				console.warn('No peers connected. Check network or bootstrap list.');
+				new Notice('No peers connected. Check network or bootstrap list.')
 			}
 		} catch (error) {
-			console.error('Failed to initialize IPFS:', error);
 			throw new Error('Could not initialize IPFS node');
 		}
 	}
@@ -887,29 +845,10 @@ class IPFSManager {
 		if (!this.initialized) await this.initialize();
 		try {
 			const cid = await this.fs.addBytes(file);
-			console.log(this.helia.libp2p.contentRouting);
-			console.log(this.helia.contentRouting);
-			console.log(this.helia.routing);
-			console.log(this.helia.routing.provide)
-
 			const dht = (this.helia.libp2p.services as any).dht;
-			console.log(dht.routingTable?.size);
-			console.log(dht.routingTable?.toString?.());
-
-			// const providers = await this.helia.libp2p.contentRouting.findProviders(cid, { timeout: 5000 });
-			for (const peer of this.helia.libp2p.getPeers()) {
-				console.log('Peer:', peer.toString());
-				const p = await this.helia.libp2p.peerStore.get(peer)
-				if (p.protocols) {
-					console.log('Protocols:', p.protocols);
-				}
-			}
-			// console.log('Found providers:', providers);
 			await dht.provide(CID.parse(cid.toString()))
-			console.log('Added file to IPFS:', cid.toString());
 			return cid.toString();
 		} catch (error) {
-			console.error('Error adding file to IPFS:', error);
 			throw new Error('Failed to add file to IPFS');
 		}
 	}
